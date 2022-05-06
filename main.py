@@ -84,6 +84,11 @@ def get(data):
     return list(map(int, data.split(";")))
 
 
+@app.route("/are_you_alive", methods=['GET', 'POST'])
+def are_you_alive():
+    return str(datetime.datetime.now() - time_start)
+
+
 @app.route("/create_user", methods=['GET', 'POST'])
 def create_user():
     login = request.args.get("l", default="", type=str)
@@ -315,6 +320,7 @@ def get_chat():
 
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     return chat.name
+
 
 @app.route("/get_chat_users", methods=['GET', 'POST'])
 def get_chat_users():
