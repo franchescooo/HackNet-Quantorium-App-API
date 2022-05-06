@@ -10,7 +10,7 @@ class User(SqlAlchemyBase, UserMixin):
     password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     mail = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     chats = sqlalchemy.Column(sqlalchemy.String, default="")
-    img = sqlalchemy.Column(sqlalchemy.Integer, default=0)
+    img = sqlalchemy.Column(sqlalchemy.Integer, default="")
     extra = sqlalchemy.Column(sqlalchemy.String, default="")
 
 
@@ -26,4 +26,5 @@ class MSG(SqlAlchemyBase, UserMixin):
     __tablename__ = 'messages'
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     text = sqlalchemy.Column(sqlalchemy.String, default="")
-    user = sqlalchemy.Column(sqlalchemy.Integer, default=0)
+    user = sqlalchemy.Column(sqlalchemy.Integer, default="")
+    chat = sqlalchemy.Column(sqlalchemy.Integer, default="")

@@ -122,43 +122,59 @@ def check_user():
         return str(user.id)
     return "not ok"
 
-@app.route("/are_you_alive", methods=['GET', 'POST'])
-def are_you_alive():
-    return str(datetime.datetime.now() - time_start)
+
+@app.route("/change_mail", methods=['GET', 'POST'])
+def change_mail():
+    id = request.args.get("i", default="", type=int)
+    password = request.args.get("p", default="", type=str)
+    mail = request.args.get("m", default="", type=str)
+
+    session = db_session.create_session()
+    user = session.query(User).filter(User.id == id).first()
+
+    if user.password == password:
+        user.mail = mail
+        session.commit()
+        return "ok"
+    else:
+        return "bad password"
 
 
-# @app.route("/change_mail", methods=['GET', 'POST'])
-# def change_mail():
-#     id = request.args.get("i", default="", type=str)
-#     password = request.args.get("p", default="", type=str)
-#     mail = request.args.get("m", default="", type=str)
-#
-#     session = db_session.create_session()
-#     user = session.query(User).filter(User.id == id).first()
-#
-#     if user.password == password:
-#         user.mail = mail
-#         session.commit()
-#         return "ok"
-#     else:
-#         return "bad password"
+@app.route("/change_password", methods=['GET', 'POST'])
+def change_password():
+    id = request.args.get("i", default="", type=str)
+    old_password = request.args.get("op", default="", type=str)
+    new_password = request.args.get("np", default="", type=str)
+
+    session = db_session.create_session()
+    user = session.query(User).filter(User.id == id).first()
+
+    if user.password == old_password:
+        user.password = new_password
+        session.commit()
+        return "ok"
+    else:
+        return "bad password"
 
 
-# @app.route("/change_password", methods=['GET', 'POST'])
-# def change_password():
-#     id = request.args.get("i", default="", type=str)
-#     old_password = request.args.get("o", default="", type=str)
-#     new_password = request.args.get("n", default="", type=str)
-#
-#     session = db_session.create_session()
-#     user = session.query(User).filter(User.id == id).first()
-#
-#     if user.password == old_password:
-#         user.password = new_password
-#         session.commit()
-#         return "ok"
-#     else:
-#         return "bad password"
+@app.route("/change_login", methods=['GET', 'POST'])
+def change_login():
+    user_id = request.args.get("ui", default="", type=int)
+    new_login = request.args.get("nl", default="", type=str)
+    password = sha224(request.args.get("p", default="", type=str).encode()).hexdigest()
+
+    session = db_session.create_session()
+    user = session.query(User).filter(User.id == user_id).first()
+
+    if user.password != password:
+        return "bad password"
+    user.login = new_login
+    session.commit()
+
+
+@app.route("change_image", methods=['GET', 'POST'])
+def change_image():
+    user_id = request.args.get("ui", default="", type=int)
 
 
 # @app.route("/change_user_password", methods=['GET', 'POST'])
@@ -176,7 +192,6 @@ def are_you_alive():
 #     session.close()
 #     return "ok"
 
-
 # @app.route("/delete_me", methods=['GET', 'POST'])
 # def delete_me():
 #     id = request.args.get("i", default="", type=int)
@@ -192,14 +207,12 @@ def are_you_alive():
 #     else:
 #         return "bad password"
 
-
 # @app.route("/resend_mail", methods=['GET', 'POST'])
 # def resend_mail():
 #     id = request.args.get("i", default="нет", type=int)
 #     sendmail = threading.Thread(target=send_mail, args=(id,))
 #     sendmail.start()
 #     return "ok"
-
 
 # @app.route("/check_mail", methods=['GET', 'POST'])
 # def check_mail():
@@ -213,9 +226,6 @@ def are_you_alive():
 #         return "yes"
 #     return "no"
 
-
-# Существует ли пользователь с таким ником? (Если да, то получаем id, иначе no)
-
 # @app.route("/exist_user", methods=['GET', 'POST'])
 # def exist_user():
 #     login = request.args.get("l", default="", type=str)
@@ -226,7 +236,6 @@ def are_you_alive():
 #     sendmail = threading.Thread(target=send_mail, args=(user.id,))
 #     sendmail.start()
 #     return str(user.id)
-
 
 @app.route("/send_message", methods=['GET', 'POST'])
 def send_message():
@@ -239,6 +248,7 @@ def send_message():
     msg = MSG()
     msg.text = message
     msg.user = user_id
+    msg.chat = chat_id
     session.add(msg)
 
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
@@ -246,10 +256,42 @@ def send_message():
     session.commit()
 
 
+@app.route("/edit_message", methods=['GET', 'POST'])
+def edit_message():
+    id = request.args.get("i", default="", type=int)
+    new_msg = request.args.get("nm", default="", type=int)
+
+    session = db_session.create_session()
+
+    msg = session.query(MSG).filter(MSG.id == id).first()
+    msg.text = new_msg
+    session.commit()
+
+
+@app.route("/delete_message", methods=['GET', 'POST'])
+def delete_message():
+    msg_id = request.args.get('mi', default="", type=int)
+    user_id = request.args.get('ui', default="", type=int)
+
+    session = db_session.create_session()
+
+    msg = session.query(MSG).filter(MSG.id == msg_id).first()
+    if msg.user != user_id:
+        return "Not your message"
+
+    chat_id = msg.chat
+    chat = session.query(Chat).filter(Chat.id == chat_id)
+    temp = chat.msg.split(';')
+    del temp[temp.index(msg_id)]
+    chat.msg = ';'.join(temp)
+    session.commit()
+
+
 @app.route("/get_messages", methods=['GET', 'POST'])
 def get_messages():
     chat_id = request.args.get("ci", default="", type=int)
     count = request.args.get("co", default=0, type=int)
+
     session = db_session.create_session()
 
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
@@ -258,13 +300,23 @@ def get_messages():
         return "end"
     d = {}
     h = session.query(MSG).filter(MSG.id == int(s[count])).first()
-
     u = session.query(User).filter(User.id == int(h.user)).first()
     d["user"] = u.login
     d["text"] = h.text
     return d
 
 
+@app.route("/get_chat", methods=['GET', 'POST'])
+def get_chat():
+    chat_id = request.args.get("ci", default="", type=int)
+
+    session = db_session.create_session()
+
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    return chat.name
+
+
+# for admin:
 @app.route("/add_user", methods=['GET', 'POST'])
 def add_user():
     chat_id = request.args.get("ci", default="", type=int)
@@ -274,6 +326,23 @@ def add_user():
 
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     chat.users += ";" + user_id
+
+    user = session.query(User).filter(User.id == user_id).first()
+    user.chats += ";" + chat_id
+    session.commit()
+
+
+@app.route("/del_user", methods=['GET', 'POST'])
+def del_user():
+    chat_id = request.args.get("ci", default="", type=int)
+    user_id = request.args.get("ui", default="", type=int)
+
+    session = db_session.create_session()
+
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    temp = chat.users.split(';')
+    del temp[temp.index(str(user_id))]
+    chat.users = ';'.join(temp)
     session.commit()
 
 
