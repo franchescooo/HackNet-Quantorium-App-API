@@ -296,20 +296,21 @@ def delete_message():
 @app.route("/get_messages", methods=['GET', 'POST'])
 def get_messages():
     chat_id = request.args.get("ci", default="", type=int)
-    count = request.args.get("co", default=0, type=int)
 
     session = db_session.create_session()
 
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
-    s = chat.msg.split(';')
-    if count >= len(s):
-        return "end"
-    d = {}
-    h = session.query(MSG).filter(MSG.id == int(s[count])).first()
-    u = session.query(User).filter(User.id == int(h.user)).first()
-    d["user"] = u.login
-    d["text"] = h.text
-    return d
+    return chat.msg
+
+@app.route("/get_message", methods=['GET', 'POST'])
+def get_message():
+    msg_id = request.args.get("mi", default="", type=int)
+
+    session = db_session.create_session()
+
+    msg = session.query(MSG).filter(MSG.id == msg_id).first
+    user = session.query(User).filter(User.id == msg.user).first()
+    return msg.text + ';' + user.login
 
 
 @app.route("/get_chat", methods=['GET', 'POST'])
@@ -321,6 +322,14 @@ def get_chat():
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     return chat.name
 
+
+@app.route("/get_all_chats", methods=['GET', 'POST'])
+def get_all_chats():
+    id = request.args.get("i", default="", type=int)
+    s = db_session.create_session()
+
+    user = s.query(User).filter(User.id == id).first()
+    return user.chats
 
 @app.route("/get_chat_users", methods=['GET', 'POST'])
 def get_chat_users():
@@ -350,6 +359,17 @@ def add_user():
 
     user = session.query(User).filter(User.id == user_id).first()
     user.chats += ";" + chat_id
+    session.commit()
+
+
+@app.route("/add_role", methods=['GET', 'POST'])
+def change_role():
+    user_id = request.args.get("ui", default="", type=int)
+
+    session = db_session.create_session()
+
+    user = session.query(User).filter(User.id == user_id).first()
+    user.role = "Учитель"
     session.commit()
 
 

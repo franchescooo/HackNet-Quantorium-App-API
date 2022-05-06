@@ -12,6 +12,7 @@ class User(SqlAlchemyBase, UserMixin):
     chats = sqlalchemy.Column(sqlalchemy.String, default="")
     img = sqlalchemy.Column(sqlalchemy.Integer, default="")
     extra = sqlalchemy.Column(sqlalchemy.String, default="")
+    role = sqlalchemy.Column(sqlalchemy.String, default="Ученик")
 
 
 class Chat(SqlAlchemyBase, UserMixin):
