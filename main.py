@@ -91,6 +91,7 @@ def create_user():
     mail = request.args.get("m", default="", type=str).replace(" ", "").lower()
 
     session = db_session.create_session()
+
     users_login = list(map(lambda x: x.login, session.query(User).all()))
     users_mail = list(map(lambda x: x.mail, session.query(User).all()))
 
@@ -114,7 +115,9 @@ def create_user():
 def check_user():
     login = request.args.get("l", default="", type=str)
     password = sha224(request.args.get("p", default="", type=str).encode()).hexdigest()
+
     session = db_session.create_session()
+
     user = session.query(User).filter(User.login == login).first()
     if user is None:
         return "not ok"
@@ -130,6 +133,7 @@ def change_mail():
     mail = request.args.get("m", default="", type=str)
 
     session = db_session.create_session()
+
     user = session.query(User).filter(User.id == id).first()
 
     if user.password == password:
@@ -147,6 +151,7 @@ def change_password():
     new_password = request.args.get("np", default="", type=str)
 
     session = db_session.create_session()
+
     user = session.query(User).filter(User.id == id).first()
 
     if user.password == old_password:
@@ -164,17 +169,13 @@ def change_login():
     password = sha224(request.args.get("p", default="", type=str).encode()).hexdigest()
 
     session = db_session.create_session()
+
     user = session.query(User).filter(User.id == user_id).first()
 
     if user.password != password:
         return "bad password"
     user.login = new_login
     session.commit()
-
-
-@app.route("change_image", methods=['GET', 'POST'])
-def change_image():
-    user_id = request.args.get("ui", default="", type=int)
 
 
 # @app.route("/change_user_password", methods=['GET', 'POST'])
@@ -259,7 +260,7 @@ def send_message():
 @app.route("/edit_message", methods=['GET', 'POST'])
 def edit_message():
     id = request.args.get("i", default="", type=int)
-    new_msg = request.args.get("nm", default="", type=int)
+    new_msg = request.args.get("nm", default="", type=str)
 
     session = db_session.create_session()
 
@@ -314,6 +315,20 @@ def get_chat():
 
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     return chat.name
+
+@app.route("/get_chat_users", methods=['GET', 'POST'])
+def get_chat_users():
+    chat_id = request.args.get("ci", default="", type=int)
+
+    session = db_session.create_session()
+
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    users_id = chat.users.split(';')
+    d = {}
+    for id in users_id:
+        user = session.query(User).filter(User.id == id).first()
+        d += user.name
+    return d
 
 
 # for admin:
